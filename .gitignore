@@ -1,9 +1,10 @@
 .vs
-.sln
+
 bin
 lib
 obj
 
+*.sln
 *.dll
 
 
