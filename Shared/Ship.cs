@@ -18,6 +18,7 @@ public class Ship
     public Orientation Orientation { get; init; }
 
 
+    /// <include file='Documentation/Ship.cs.xml' path='doc/class[@name="Ship"]/method[@name="Ctor"]' />
     public Ship(int x, int y, int size, Orientation orientation)
     {
         if (x < 0)
