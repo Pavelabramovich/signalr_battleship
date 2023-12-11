@@ -1,13 +1,13 @@
-﻿
-namespace BattleShip.Shared;
+﻿namespace BattleShip.Shared.Models;
+using System.Drawing;
 
 public class Grid
 {
     // Will be replaced by a Battle square
-    private readonly BuilderSquare[,] _field;
+    private readonly Color[,] _field;
 
 
-    internal Grid(BuilderSquare[,] field)
+    internal Grid(Color[,] field)
     {
         _field = field;
     }
@@ -20,7 +20,7 @@ public class Grid
         {
             for (int j = 0; j < 10; j++)
             {
-                res += _field[j, i].ToString() + " ";
+                res += _field[j, i].Name + "\t ";
             }
 
             res += '\n';

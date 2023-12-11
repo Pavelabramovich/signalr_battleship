@@ -1,12 +1,5 @@
-﻿
-namespace BattleShip.Shared;
+﻿namespace BattleShip.Shared.Models;
 
-
-public enum Orientation
-{
-    LeftRight = 0,
-    TopDown = 1,
-}
 
 
 public class Ship

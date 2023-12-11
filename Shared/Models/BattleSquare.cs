@@ -1,5 +1,5 @@
 ﻿
-namespace BattleShip.Shared;
+namespace BattleShip.Shared.Models;
 
 
 // Implementation may change
