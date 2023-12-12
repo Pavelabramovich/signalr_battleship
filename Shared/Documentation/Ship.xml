@@ -1,0 +1,53 @@
+﻿<?xml version="1.0" encoding="utf-8" ?>
+<doc>
+	<class name="Ship">
+		<method name="Ctor">
+			<summary>Create ship from it's position, size and orientation</summary>
+
+			<param name="x">X coordinate of the ship, must be not negative.</param>
+			<param name="y">Y coordinate of the ship, must be not negative.</param>	
+			<param name="size">Size of the ship, must be positive.</param>
+			<param name="orientation">Orientation of the ship.</param>
+
+			<exception cref="System.ArgumentException">Thrown when x or y is less than 0 or size is less than 1 or orientation is not declared enum object.</exception>
+		</method>
+
+		<method name="X">
+			<summary>Represent X of ship.</summary>
+
+			<returns>X of ship.</returns>
+		</method>
+
+
+		<method name="Y">
+			<summary>Represent Y of ship.</summary>
+
+			<returns>Y of ship.</returns>
+		</method>
+
+
+		<method name="Size">
+			<summary>Represent ship size.</summary>
+
+			<returns>Ship size.</returns>
+		</method>
+
+
+		<method name="Orientation">
+			<summary>Represent orientation of ship.</summary>
+
+			<returns>Ship orientation.</returns>
+		</method>
+
+
+		<method name="Deconstruct">
+			<summary>Deconstruct ship to it's position, size and orientation, check <see href="https://learn.microsoft.com/ru-ru/dotnet/csharp/fundamentals/functional/deconstruct">decontruction</see>.
+		</summary>
+
+			<param name="x">X coordinate of the ship.</param>
+			<param name="y">Y coordinate of the ship.</param>
+			<param name="size">Size of the ship.</param>
+			<param name="orientation">Orientation of the ship.</param>
+		</method>
+	</class>
+</doc> 
