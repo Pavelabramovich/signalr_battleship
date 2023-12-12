@@ -1,0 +1,30 @@
+﻿<?xml version="1.0" encoding="utf-8" ?>
+<doc>
+	<class name="Orientation">
+		<description>
+			<summary>Enum to repsent orientation - left-right or top-down.</summary>
+		</description>
+	</class>
+
+	<class name="Direction">
+		<description>
+			<summary>Enum to repsent direction - top, right, down, left.</summary>
+		</description>
+	</class>
+
+	<class name="ShipPart">
+		<description>
+			<summary>
+				Enum to represent part of ship - end, start, start and end etc. Work like <see href="https://learn.microsoft.com/ru-ru/dotnet/api/system.flagsattribute?view=net-7.0">flags</see>.
+			</summary>
+		</description>
+	</class>
+
+	<class name="OrientedShipPart">
+		<description>
+			<summary>
+				Struct to represent ship part with it orientation.
+			</summary>
+		</description>
+	</class>
+</doc>

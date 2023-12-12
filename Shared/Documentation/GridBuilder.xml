@@ -1,0 +1,75 @@
+﻿<?xml version="1.0" encoding="utf-8" ?>
+<doc>
+	<class name="GridBuilder">
+		<description>
+			<summary>Class that help create Grid.</summary>
+		</description>
+		
+		<method name="Ctor">
+			<base>
+				<summary>Create BridBuilder.</summary>
+
+				<param name="sizeX">Width of grid, must be positive.</param>
+				<param name="sizeY">Height of grid, must be positive.</param>
+
+				<exception cref="System.ArgumentException">Thrown when sizeX or sizeY is negative.</exception>
+			</base>
+
+			
+			<default>
+				<summary>Create BridBuilder with default height and width.</summary>
+			</default>
+		</method>
+
+		
+		<method name="SizeX">
+			<summary>Represent height of created grid.</summary>
+
+			<returns>Height of created grid.</returns>
+		</method>
+
+		
+		<method name="SizeY">
+			<summary>Represent width of created grid.</summary>
+
+			<returns>Width of created grid.</returns>
+		</method>
+
+		
+		<method name="AddShip">
+			<summary>
+				Saves selected ship if it valid, remove it if invalid, then add new ship and select it.
+			</summary>
+
+			<param name="ship">Ship to add</param>
+
+			<exception cref="System.ArgumentException">Thrown when ship can't fit in the grid.</exception>
+		</method>
+
+		
+		<method name="SaveSelectedShip">
+			<summary>Saves selected ship if it valid, remove it if invalid.</summary>
+		</method>
+
+
+		<method name="RemoveSelectedShip">
+			<summary>Removes selected ship.</summary>
+		</method>
+
+
+		<method name="SelectShip">
+			<summary>Select ship by special square. If no ship on that square, nothing will happen.</summary>
+
+			<param name="x">X of square with ship.</param>
+			<param name="y">Y of square with ship.</param>
+		</method>
+
+
+		<method name="MoveSelectedShip">
+			<summary>Move selected ship to 1 square in a certain direction. If it's impossible to move the ship, it won't move.</summary>
+
+			<param name="direction">Direction to which the ship should be moved.</param>
+		</method>
+	</class>
+</doc>
+
