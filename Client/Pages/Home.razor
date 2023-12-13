@@ -1,0 +1,23 @@
+﻿@page "/"
+
+@inject NavigationManager NavigationManager
+
+<PageTitle>Home</PageTitle>
+
+<div class="container">
+	<button class="btn btn-dark" @onclick="CreateGame">Create game</button>
+	<button class="btn btn-dark" @onclick="JoinGame">Join game</button>
+</div>
+
+@code 
+{
+    private void CreateGame()
+    {
+        NavigationManager.NavigateTo("/create");
+    }
+
+    private void JoinGame()
+    {
+        NavigationManager.NavigateTo("/join");
+    }
+}

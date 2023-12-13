@@ -1,0 +1,23 @@
+﻿@page "/waiting"
+
+@inject NavigationManager NavigationManager
+@inject IGameService GameService
+
+<PageTitle>Waiting</PageTitle>
+
+<div class="container">
+	<span class="loader" style="transform: scale(5) translateY(50px);"></span>
+</div>
+
+@code 
+{
+	protected async override Task OnInitializedAsync()
+	{
+		GameService.CreateConnection("Notify", () =>
+		{
+			NavigationManager.NavigateTo("/play");
+		});
+
+		await GameService.ConnectToHub();
+	}
+}
