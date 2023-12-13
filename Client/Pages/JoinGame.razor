@@ -1,0 +1,35 @@
+﻿@page "/join"
+
+@inject NavigationManager NavigationManager
+@inject IGameService GameService
+
+<PageTitle>Join game</PageTitle>
+
+<div class="container">
+	<input class="form-control" type="text" placeholder="Game ID" @bind="GameId">
+	<input class="form-control" type="text" placeholder="Username" @bind="Username">
+	<button class="btn btn-dark" @onclick="(async () => await Join())">Join</button>
+</div>
+
+@code
+{
+	private string GameId { get; set; } = "";
+	private string Username { get; set; } = "";
+
+	protected async override Task OnInitializedAsync()
+	{
+		GameService.CreateConnection("Receive", () => { });
+
+		await GameService.ConnectToHub();
+	}
+
+	private async Task Join()
+	{
+		bool result = await GameService.JoinGame(GameId, Username);
+
+		if (result)
+		{
+			NavigationManager.NavigateTo("/play");
+		}
+	}
+}

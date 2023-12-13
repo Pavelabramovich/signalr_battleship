@@ -1,52 +1,19 @@
-using Microsoft.AspNetCore.ResponseCompression;
-
 using BattleShip.Server.Hubs;
-
 
 var builder = WebApplication.CreateBuilder(args);
 
-// Add services to the container.
-
-builder.Services.AddControllersWithViews();
-builder.Services.AddRazorPages();
-
-
-///
 builder.Services.AddSignalR();
-builder.Services.AddResponseCompression(opts =>
-{
-    opts.MimeTypes = ResponseCompressionDefaults.MimeTypes.Concat(
-        new[] { "application/octet-stream" });
-});
-
+builder.Services.AddCors();
 
 var app = builder.Build();
 
-
-app.UseResponseCompression();  ///
-
-
-if (app.Environment.IsDevelopment())
-{
-    app.UseWebAssemblyDebugging();
-}
-else
-{
-    app.UseExceptionHandler("/Error");
-    app.UseHsts();
-}
+app.UseCors(builder => builder.AllowAnyOrigin().AllowAnyHeader());
 
 app.UseHttpsRedirection();
 
-app.UseBlazorFrameworkFiles();
+app.UseDefaultFiles();
 app.UseStaticFiles();
 
-app.UseRouting();
-
-
-app.MapRazorPages();
-app.MapControllers();
-app.MapHub<ChatHub>("/chathub");
-app.MapFallbackToFile("index.html");
+app.MapHub<GameHub>("/gamehub"); 
 
 app.Run();
