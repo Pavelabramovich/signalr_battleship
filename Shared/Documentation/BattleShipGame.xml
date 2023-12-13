@@ -1,0 +1,12 @@
+﻿<?xml version="1.0" encoding="utf-8" ?>
+<doc>
+	<class name="BattleShipGame">
+		<description>
+			<summary>Class that represent battleship game.</summary>
+		</description>
+
+		<method name="OnGameEnd">
+			<summary>Event that invoked on game end. String parameter - winner name.</summary>
+		</method>
+	</class>
+</doc>

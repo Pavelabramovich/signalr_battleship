@@ -9,6 +9,9 @@ public class GridBuilder
     private Ship? _selectedShip;
     private Dictionary<Point, Ship> _ships;
 
+    private event Action? _onAllShipDestroyed;
+    private event Action<Ship>? _onShipDestroyed;
+
     private const int DEFAULT_SIZE = 10;
 
     /// <include file='Documentation/GridBuilder.xml' path='doc/class[@name="GridBuilder"]/method[@name="Ctor"]/base' />
@@ -87,6 +90,12 @@ public class GridBuilder
     /// <include file='Documentation/GridBuilder.xml' path='doc/class[@name="GridBuilder"]/method[@name="SelectShip"]' />
     public GridBuilder SelectShip(int x, int y)
     {
+        if (x < 0 || x >= SizeX)
+            throw new ArgumentOutOfRangeException(nameof(x), "Invalid x.");
+
+        if (y < 0 || y >= SizeY)
+            throw new ArgumentOutOfRangeException(nameof(y), "Invalid y.");
+
         foreach (Ship ship in _ships.Values)
         {
             if (IsIntersectedWith(x, y, ship))
@@ -124,7 +133,7 @@ public class GridBuilder
 
             AddShip(new Ship(x, y, ship.Size, ship.Orientation));
         }
-        catch (ArgumentException)
+        catch (ArgumentOutOfRangeException)
         {
             AddShip(ship);
         }
@@ -132,13 +141,127 @@ public class GridBuilder
         return this;
     }
 
+    /// <include file='Documentation/GridBuilder.xml' path='doc/class[@name="GridBuilder"]/method[@name="RotateSelectedShip"]' />
+    public GridBuilder RotateSelectedShip()
+    {
+        if (_selectedShip is null)
+            return this;
+
+        var ship = _selectedShip;
+
+        RemoveSelectedShip();
+
+        try
+        {
+            AddShip(new Ship(ship.X, ship.Y, ship.Size, ship.Orientation.Opposite()));
+        }
+        catch (ArgumentOutOfRangeException)
+        {
+            AddShip(ship);
+        }
+
+        return this;
+    }
+
+    /// <include file='Documentation/GridBuilder.xml' path='doc/class[@name="GridBuilder"]/method[@name="AddOnAllShipDestroyed"]' />
+    public GridBuilder AddOnAllShipDestroyed(Action @event)
+    {
+        if (_onAllShipDestroyed is null)
+        {
+            _onAllShipDestroyed = @event;
+        }
+        else
+        {
+            _onAllShipDestroyed += @event;
+        }
+
+        return this;
+    }
+
+    /// <include file='Documentation/GridBuilder.xml' path='doc/class[@name="GridBuilder"]/method[@name="AddOnShipDestroyed"]' />
+    public GridBuilder AddOnShipDestroyed(Action<Ship> @event)
+    {
+        if (_onAllShipDestroyed is null)
+        {
+            _onShipDestroyed = @event;
+        }
+        else
+        {
+            _onShipDestroyed += @event;
+        }
+
+        return this;
+    }
+
+    /// <include file='Documentation/GridBuilder.xml' path='doc/class[@name="GridBuilder"]/method[@name="Rows"]' />
     public IEnumerable<IEnumerable<BuilderSquare>> Rows
     {
         get
         {
-            var colors = new BuilderSquare[SizeX, SizeY];
+            BuilderSquare[,] squares = BuilderSquares;
 
-            Func<Ship, Func<BuilderSquare, int, BuilderSquare>> modifyShipPart = (ship) => (s, i) =>
+            for (int i = 0; i < SizeY; i++)
+            {
+                yield return Enumerable
+                                .Range(0, SizeX)
+                                .Select(j => squares[i, j]);
+            }
+        }
+    }
+
+
+
+
+    /// <include file='Documentation/GridBuilder.xml' path='doc/class[@name="GridBuilder"]/method[@name="Build"]' />
+    public Grid Build()
+    {
+        if (!IsSelectedShipValid())
+            throw new InvalidOperationException("Can't build grid because selected ship is invalid");
+
+        SaveSelectedShip();
+
+        BuilderSquare[,] builderSquares = BuilderSquares;
+
+        BattleSquare[,] battleSquares = new BattleSquare[SizeY, SizeX];
+        
+
+        for (int i = 0; i < SizeY; i++)
+        {
+            for (int j = 0; j < SizeX; j++)
+            {
+                battleSquares[i, j] = new BattleSquare(ShotStatus.Intact, builderSquares[i, j].OrientedShipPart); 
+            }
+        }
+
+        return new Grid(battleSquares, _ships.Count, _onAllShipDestroyed, _onShipDestroyed);
+    }
+
+    public override string ToString()
+    {
+        string res = new string('-', SizeX + 2) + '\n';
+
+        foreach (var row in this.Rows)
+        {
+            res += '|';
+
+            foreach (var square in row)
+            {
+                res += square.ToString();
+            }
+
+            res += "|\n";
+        }
+
+        res += new string('-', SizeX + 2) + '\n';
+
+        return res;
+    }
+
+    private BuilderSquare[,] BuilderSquares
+    {
+        get
+        {
+            static BuilderSquare modifyShipPart(Ship ship, BuilderSquare s, int i)
             {
                 ShipPart newShipPart;
 
@@ -160,83 +283,39 @@ public class GridBuilder
                 }
 
                 return s with { OrientedShipPart = (s.OrientedShipPart ?? new()) with { ShipPart = newShipPart } };
-            };
+            }
 
-            Func<Ship, Func<BuilderSquare, BuilderSquare>> modifyOrientation = (ship) => (s) =>
+            static BuilderSquare modifyOrientation(Ship ship, BuilderSquare s)
             {
                 return s with { OrientedShipPart = (s.OrientedShipPart ?? new()) with { Orientation = ship.Orientation } };
-            };
+            }
+
+
+            var squares = new BuilderSquare[SizeY, SizeX];
 
             foreach (var ship in _ships.Values)
             {
-                ResetShip(ship, modifyShipPart(ship), colors);
-                ResetShip(ship, modifyOrientation(ship), colors);
+                MarkShip(ship, modifyShipPart, squares);
+                MarkShip(ship, modifyOrientation, squares);
             }
 
             if (_selectedShip is not null)
             {
                 Color borderColor = IsSelectedShipValid() ? Color.Green : Color.Red;
 
-                Func<BuilderSquare, BuilderSquare> modifyBorderColor = (s) =>
+                BuilderSquare modifySeaColor(BuilderSquare s)
                 {
                     return s with { SeaColor = borderColor };
-                };
+                }
 
-                ResetShip(_selectedShip, modifyShipPart(_selectedShip), colors);
-                ResetShip(_selectedShip, modifyOrientation(_selectedShip), colors);
+                MarkShip(_selectedShip, modifyShipPart, squares);
+                MarkShip(_selectedShip, modifyOrientation, squares);
 
-                MarkBorder(_selectedShip, modifyBorderColor, colors);
+                MarkBorder(_selectedShip, modifySeaColor, squares);
             }
 
-            for (int i = 0; i < SizeY; i++)
-            {
-                yield return Enumerable
-                                .Range(0, colors.GetLength(1))
-                                .Select(j => colors[i, j]);
-            }
+            return squares;
         }
-    }
-
-    public Grid Build()
-    {
-        var colors = new Color[SizeX, SizeY];
-
-
-        //foreach (var ship in _ships.Values)
-        //{
-        //    ResetShip(ship, c => Color.Black, colors);
-        //}
-
-        //if (_selectedShip is not null)
-        //{
-        //    Color borderColor = IsSelectedShipValid() ? Color.Green : Color.Red;
-
-        //    ResetShip(_selectedShip, c => Color.Gray, colors);
-
-        //    int x = _selectedShip.X;
-        //    int y = _selectedShip.Y;
-
-        //    MarkBorder(_selectedShip, c => borderColor, colors);
-        //}
-
-        return new Grid(colors);
-    }
-
-    public override string ToString()
-    {
-        string res = string.Empty;
-
-        foreach (var row in this.Rows)
-        {
-            foreach (var square in row)
-            {
-                res += square.ToString() + "\t ";
-            }
-
-            res += '\n';
-        }
-
-        return res;
     }
 
 
@@ -277,19 +356,29 @@ public class GridBuilder
     }
 
 
-    private static void ResetShip(Ship ship, Func<BuilderSquare, BuilderSquare> modify, BuilderSquare[,] grid)
+    private static void MarkShip(Ship ship, Func<BuilderSquare, BuilderSquare> modify, BuilderSquare[,] grid)
     {
-        ResetShip(ship, (s, i) => modify(s), grid);
+        MarkShip(ship, (s, i) => modify(s), grid);
     }
 
-    private static void ResetShip(Ship ship, Func<BuilderSquare, int, BuilderSquare> modifyByIndex, BuilderSquare[,] grid)
+    private static void MarkShip(Ship ship, Func<Ship, BuilderSquare, BuilderSquare> modifyByShip, BuilderSquare[,] grid)
     {
-        int x = ship.X;
-        int y = ship.Y;
+        MarkShip(ship, (ship, s, i) => modifyByShip(ship, s), grid);
+    }
 
-        for (int i = 0; i < ship.Size; i++, MoveNext(ref x, ref y, ship))
+    private static void MarkShip(Ship ship, Func<BuilderSquare, int, BuilderSquare> modifyByIndex, BuilderSquare[,] grid)
+    {
+        MarkShip(ship, (ship, s, i) => modifyByIndex(s, i), grid);
+    }
+
+    private static void MarkShip(Ship ship, Func<Ship, BuilderSquare, int, BuilderSquare> modifyByShipIndex, BuilderSquare[,] grid)
+    {
+        int col = ship.X;
+        int row = ship.Y;
+
+        for (int i = 0; i < ship.Size; i++, MoveNext(ref col, ref row, ship))
         {
-            grid[x, y] = modifyByIndex(grid[x, y], i);
+            grid[row, col] = modifyByShipIndex(ship, grid[row, col], i);
         }
     }
 
@@ -321,12 +410,11 @@ public class GridBuilder
             if (x < 0 || x >= SizeX || y < 0 || y >= SizeY)
                 return;
 
-            grid[x, y] = modify(grid[x, y]);
+            int row = y;
+            int col = x;
+
+            grid[row, col] = modify(grid[row, col]);
         }
     }
-
-
-
-
 }
 

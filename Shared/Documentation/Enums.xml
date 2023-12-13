@@ -27,4 +27,12 @@
 			</summary>
 		</description>
 	</class>
+
+	<class name="ShotStatus">
+		<description>
+			<summary>
+				Struct to represent status of shot.
+			</summary>
+		</description>
+	</class>
 </doc>

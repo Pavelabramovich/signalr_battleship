@@ -12,7 +12,7 @@
 				<param name="sizeX">Width of grid, must be positive.</param>
 				<param name="sizeY">Height of grid, must be positive.</param>
 
-				<exception cref="System.ArgumentException">Thrown when sizeX or sizeY is negative.</exception>
+				<exception cref="System.ArgumentOutOfRangeException">Thrown when sizeX or sizeY is negative.</exception>
 			</base>
 
 			
@@ -43,7 +43,7 @@
 
 			<param name="ship">Ship to add</param>
 
-			<exception cref="System.ArgumentException">Thrown when ship can't fit in the grid.</exception>
+			<exception cref="System.ArgumentOutOfRangeException">Thrown when ship can't fit in the grid.</exception>
 		</method>
 
 		
@@ -62,6 +62,8 @@
 
 			<param name="x">X of square with ship.</param>
 			<param name="y">Y of square with ship.</param>
+
+			<exception cref="System.ArgumentOutOfRangeException">Thrown when x or y is invalid for this grid.</exception>
 		</method>
 
 
@@ -69,6 +71,43 @@
 			<summary>Move selected ship to 1 square in a certain direction. If it's impossible to move the ship, it won't move.</summary>
 
 			<param name="direction">Direction to which the ship should be moved.</param>
+		</method>
+
+
+		<method name="RotateSelectedShip">
+			<summary>Rotate selected ship. If it's impossible to rotate the ship, it won't rotate.</summary>
+		</method>
+
+
+		<method name="AddOnAllShipDestroyed">
+			<summary>
+				Adds event that will be called after all ship destroying.
+			</summary>
+
+			<param name="event">Event to call</param>
+		</method>
+
+
+		<method name="AddOnShipDestroyed">
+			<summary>
+				Adds event that will be called for every ship destroying.
+			</summary>
+
+			<param name="event">Event to call</param>
+		</method>
+		
+
+		<method name="Rows">
+			<summary>Represent rows of created grid.</summary>
+
+			<returns>Rows as collections of builder squares.</returns>
+		</method>
+
+
+		<method name="Build">
+			<summary>Create <see cref="Grid">Grid</see> instance.</summary>
+
+			<returns>Grid instance, that represented by this grid builder.</returns>
 		</method>
 	</class>
 </doc>

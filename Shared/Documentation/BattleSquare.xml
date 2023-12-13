@@ -1,0 +1,16 @@
+﻿<?xml version="1.0" encoding="utf-8" ?>
+<doc>
+	<class name="BattleSquare">
+		<description>
+			<summary>Class to represent square of battle grid.</summary>
+		</description>
+
+
+		<method name="ToString">
+			<summary>String representatiton of battle square.</summary>
+
+			<returns>String that represent battle square.</returns>
+		</method>
+	</class>
+</doc>
+
