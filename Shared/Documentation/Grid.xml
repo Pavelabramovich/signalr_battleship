@@ -1,0 +1,53 @@
+﻿<?xml version="1.0" encoding="utf-8" ?>
+<doc>
+	<class name="Grid">
+		<description>
+			<summary>Class that represent battle grid.</summary>
+		</description>
+
+
+		<method name="ShipCount">
+			<summary>Represent ship count on this grid.</summary>
+
+			<returns>Count of ship on grid.</returns>
+		</method>
+
+
+		<method name="SizeX">
+			<summary>Represent height of grid.</summary>
+
+			<returns>Height of grid.</returns>
+		</method>
+		
+
+		<method name="SizeY">
+			<summary>Represent width of grid.</summary>
+
+			<returns>Width of grid.</returns>
+		</method>
+
+
+		<method name="Shot">
+			<summary>Make shot by coordinates.</summary>
+
+			<param name="x">X of square to shot.</param>
+			<param name="y">Y of square to shot.</param>
+
+			<returns>Status of the shot.</returns>
+		</method>
+
+
+		<method name="Rows">
+			<summary>Represent rows of grid.</summary>
+
+			<returns>Rows as collections of battle squares.</returns>
+		</method>
+
+
+		<method name="ToString">
+			<summary>Return string representation of grid.</summary>
+
+			<returns>String that represent this grid.</returns>
+		</method>
+	</class>
+</doc>

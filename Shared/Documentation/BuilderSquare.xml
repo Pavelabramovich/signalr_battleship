@@ -4,6 +4,13 @@
 		<description>
 			<summary>Record to represent square of grid builder.</summary>
 		</description>
+
+		
+		<method name="ToString">
+			<summary>String representatiton of builder square.</summary>
+
+			<returns>String that represent builder square.</returns>
+		</method>
 	</class>
 </doc>
 
