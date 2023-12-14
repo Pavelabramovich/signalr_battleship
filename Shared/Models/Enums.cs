@@ -48,7 +48,10 @@ public static class ShipPartExtension
 }
 
 /// <include file='Documentation/Enums.xml' path='doc/class[@name="OrientedShipPart"]/description' />
-public record struct OrientedShipPart(Orientation Orientation, ShipPart ShipPart);
+public record struct OrientedShipPart(Orientation Orientation, ShipPart ShipPart)
+{
+    public ShipPart GetShipPart() { return this.ShipPart; }
+}
 
 
 /// <include file='Documentation/Enums.xml' path='doc/class[@name="ShotStatus"]/description' />

@@ -1,7 +1,134 @@
 ﻿@page "/arrangement"
 
+@inject IJSRuntime JSRuntime
+@inject NavigationManager NavigationManager
+@inject IGameService GameService
+
 <PageTitle>Arrangement</PageTitle>
 
-<div class="container">
-	<p>Arrangement...</p>
+<link href="css/style.css" rel="stylesheet">
+
+<div id="matrix" style="position: fixed; left:20px; top:50px;"></div>
+<div class="wrap">
+
+	<div class="battlefield">
+        <div id="text_top" class="flex text-top">The arrangement of ships</div>
+
+		<div class="flex outer">
+			<div class="field field-human">
+				<div id="field_human" class="ships"></div>
+			</div>
+			<div id="instruction" class="instruction">
+				<div id="type_placement" class="type-placement-box">
+                    1. <span class="link" data-target="random">Randomly</span><br>
+                    2. <span class="link" data-target="manually">By dragging and dropping.</span>
+				</div>
+				<div id="ships_collection" class="ships-collection" hidden>
+                    <p>Drag the ships onto the playing field with the mouse. To install the ship vertically, right-click on it.</p>
+				</div>
+			</div>
+		</div>
+
+		<div class="service-row">
+			<div id="service_text" class="service-text"></div>
+			<button id="play" type="button" class="btn-play" hidden @onclick="Ready">Ready</button>
+		</div>
+	</div>
 </div>
+
+<ul class="initial-ships" hidden>
+	<li>
+		<div id="fourdeck1" class="ship fourdeck"></div>
+		<div id="tripledeck1" class="ship tripledeck tripledeck1"></div>
+		<div id="tripledeck2" class="ship tripledeck tripledeck2"></div>
+	</li>
+	<li>
+		<div id="doubledeck1" class="ship doubledeck"></div>
+		<div id="doubledeck2" class="ship doubledeck doubledeck2"></div>
+		<div id="doubledeck3" class="ship doubledeck doubledeck3"></div>
+	</li>
+	<li>
+		<div id="singledeck1" class="ship singledeck"></div>
+		<div id="singledeck2" class="ship singledeck singledeck2"></div>
+		<div id="singledeck3" class="ship singledeck singledeck3"></div>
+		<div id="singledeck4" class="ship singledeck singledeck4"></div>
+	</li>
+</ul>
+
+
+@code
+{
+	[Parameter] public string GameId { get; set; } = "";
+	[Parameter] public string Username { get; set; } = "";
+
+	protected async override Task OnInitializedAsync()
+	{
+		var uri = new Uri(NavigationManager.Uri);
+		var query = QueryHelpers.ParseQuery(uri.Query);
+
+		if (query.TryGetValue("GameId", out var gameId))
+		{
+			GameId = gameId;
+		}
+		if (query.TryGetValue("Username", out var username))
+		{
+			Username = username;
+		}
+
+		GameService.CreateConnection("Wait", () =>
+		{
+			NavigationManager.NavigateTo($"/waiting?GameId={GameId}&Username={Username}");
+		});
+		GameService.CreateConnection("Start", () =>
+		{
+			NavigationManager.NavigateTo($"/play?GameId={GameId}&Username={Username}");
+		});
+
+		await GameService.ConnectToHub();
+	}
+
+	private int[,]? field = new int[10, 10];
+
+	private async Task UpdateFieldAsync()
+	{
+		int[] preField = await JSRuntime.InvokeAsync<int[]>("getMatrix");
+
+		for (int i = 0; i < 10; i++)
+		{
+			for (int j = 0; j < 10; j++)
+			{
+				int index = i * 10 + j;
+				field[i, j] = preField[index];
+			}
+		}
+
+		Console.WriteLine(field);
+	}
+
+	private async Task InitializeScript()
+	{
+		await JSRuntime.InvokeVoidAsync("Init");
+	}
+
+	protected override async Task OnAfterRenderAsync(bool firstRender)
+	{
+		if (firstRender)
+		{
+			await InitializeScript();
+		}
+	}
+
+	private async Task Ready()
+	{
+		await UpdateFieldAsync();
+
+		string serializedField = JsonConvert.SerializeObject(field);
+
+		bool result = await GameService.StartGame(GameId, Username, serializedField);
+
+		if (result)
+		{
+			NavigationManager.NavigateTo($"/waiting?GameId={GameId}&Username={Username}");
+		}
+	}
+}

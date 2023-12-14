@@ -4,9 +4,17 @@
 
 <PageTitle>Home</PageTitle>
 
-<div class="container">
-	<button class="btn btn-dark" @onclick="CreateGame">Create game</button>
-	<button class="btn btn-dark" @onclick="JoinGame">Join game</button>
+<link href="css/style.css" rel="stylesheet">
+
+<div class="battlefield">
+    <div class="welcome-text">
+        <p>Welcome to our Battle Ship Game!</p>
+    </div>
+
+    <div class="start-page-buttons">
+        <input type="button" class="start_button" @onclick="CreateGame" value="Create game">
+        <input type="button" class="start_button" @onclick="JoinGame" value="Join game">
+    </div>
 </div>
 
 @code 
