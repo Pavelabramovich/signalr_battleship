@@ -57,5 +57,19 @@ namespace BattleShip.Client.Services
 				return false;
             }
         }
-    }
+
+		public async Task<bool> StartGame(string game, string username, string field)
+        {
+			try
+			{
+				await _connection.InvokeAsync("StartGame", game, username, field);
+				return true;
+			}
+			catch (Exception ex)
+			{
+				Console.WriteLine(ex.Message);
+				return false;
+			}
+		}
+	}
 }

@@ -5,10 +5,18 @@
 
 <PageTitle>Join game</PageTitle>
 
-<div class="container">
-	<input class="form-control" type="text" placeholder="Game ID" @bind="GameId">
-	<input class="form-control" type="text" placeholder="Username" @bind="Username">
-	<button class="btn btn-dark" @onclick="(async () => await Join())">Join</button>
+<link href="css/style.css" rel="stylesheet">
+
+<div class="battlefield">
+	<div class="welcome-text">
+		<p>Join game</p>
+	</div>
+
+	<div class="start-page-buttons">
+		<input class="form-control" type="text" placeholder="Game ID" @bind="GameId">
+		<input class="form-control" type="text" placeholder="Username" @bind="Username">
+		<input type="button" class="start_button" @onclick="(async () => await Join())" value="Join">
+	</div>
 </div>
 
 @code
@@ -29,7 +37,7 @@
 
 		if (result)
 		{
-			NavigationManager.NavigateTo("/play");
+			NavigationManager.NavigateTo($"/arrangement?GameId={GameId}&Username={Username}");
 		}
 	}
 }

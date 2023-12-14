@@ -5,7 +5,8 @@ namespace BattleShip.Server.Hubs;
 
 public class GameHub : Hub
 {
-    private static readonly Dictionary<string, List<string>> GameGroups = new Dictionary<string, List<string>>();
+    private static readonly Dictionary<string, List<Tuple<string, string?>>> GameGroups = 
+		new Dictionary<string, List<Tuple<string, string?>>>();
     public async Task CreateGame(string game, string username)
     {
         if (GameGroups.ContainsKey(game))
@@ -13,7 +14,7 @@ public class GameHub : Hub
             throw new Exception("This game already exists!");
         }
 
-        GameGroups.Add(game, new List<string>());
+        GameGroups.Add(game, new List<Tuple<string, string?>>());
 
         try
         {
@@ -39,7 +40,7 @@ public class GameHub : Hub
             throw new Exception("This game is full!");
         }
 
-        GameGroups[game].Add(Context.ConnectionId);
+        GameGroups[game].Add(new Tuple<string, string?>(username, null));
 
 		try
 		{
@@ -56,9 +57,22 @@ public class GameHub : Hub
 		}
     }
 
-	public override async Task OnConnectedAsync()
-	{
-		await Clients.All.SendAsync("Notify");
-		await base.OnConnectedAsync();
+    public async Task StartGame(string game, string username, string field)
+    {
+		int index = GameGroups[game].FindIndex(tuple => tuple.Item1 == username);
+
+		if (index != -1)
+		{
+			GameGroups[game][index] = new Tuple<string, string?>(username, field);
+		}
+
+		if (GameGroups[game][0].Item2 == null || GameGroups[game][1].Item1 == null)
+		{
+			await Clients.Group(game).SendAsync("Wait");
+		}
+		else
+		{
+			await Clients.Group(game).SendAsync("Start");
+		}	
 	}
 }

@@ -17,7 +17,7 @@ public record struct BuilderSquare(Color SeaColor, OrientedShipPart? OrientedShi
         }
         else
         {
-            return "█";
+            return "B";
         }
     }
 }

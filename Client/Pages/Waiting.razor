@@ -11,11 +11,30 @@
 
 @code 
 {
+	[Parameter] public string? GameId { get; set; } = "";
+	[Parameter] public string? Username { get; set; } = "";
+
 	protected async override Task OnInitializedAsync()
 	{
+		var uri = new Uri(NavigationManager.Uri);
+		var query = QueryHelpers.ParseQuery(uri.Query);
+
+		if (query.TryGetValue("GameId", out var gameId))
+		{
+			GameId = gameId;
+		}
+		if (query.TryGetValue("Username", out var username))
+		{
+			Username = username;
+		}
+
 		GameService.CreateConnection("Notify", () =>
 		{
-			NavigationManager.NavigateTo("/play");
+			NavigationManager.NavigateTo($"/arrangement?GameId={GameId}&Username={Username}");
+		});
+		GameService.CreateConnection("Start", () =>
+		{
+			NavigationManager.NavigateTo($"/play?GameId={GameId}&Username={Username}");
 		});
 
 		await GameService.ConnectToHub();

@@ -5,11 +5,18 @@
 
 <PageTitle>Create game</PageTitle>
 
-<div class="container">
-	<input class="form-control" type="text" placeholder="Game ID" @bind="GameId">
-	<input class="form-control" type="text" placeholder="Username" @bind="Username">
-	<button class="btn btn-dark" @onclick="(async () => await Create())">Create</button>
-	<p></p>
+<link href="css/style.css" rel="stylesheet">
+
+<div class="battlefield">
+	<div class="welcome-text">
+		<p>Create game</p>
+	</div>
+
+	<div class="start-page-buttons">
+		<input class="form-control" type="text" placeholder="Game ID" @bind="GameId">
+		<input class="form-control" type="text" placeholder="Username" @bind="Username">
+		<input type="button" class="start_button" @onclick="(async () => await Create())" value="Create">
+	</div>
 </div>
 
 @code 
@@ -30,7 +37,7 @@
 
 		if (result)
 		{
-			NavigationManager.NavigateTo("waiting");
+			NavigationManager.NavigateTo($"/waiting?GameId={GameId}&Username={Username}");
 		}
 	}
 }
