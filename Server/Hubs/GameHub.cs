@@ -1,29 +1,22 @@
-﻿
-using Microsoft.AspNetCore.SignalR;
+﻿using Microsoft.AspNetCore.SignalR;
+using System.Data.Common;
 
 namespace BattleShip.Server.Hubs;
 
 public class GameHub : Hub
 {
-    private static readonly Dictionary<string, List<Tuple<string, string?>>> GameGroups = 
-		new Dictionary<string, List<Tuple<string, string?>>>();
-    public async Task CreateGame(string game, string username)
+    private static readonly Dictionary<string, List<Tuple<string, string, string?>>> GameGroups = 
+		new Dictionary<string, List<Tuple<string, string, string?>>>();
+	private static Dictionary<string, string> FieldContent = new Dictionary<string, string>();
+	private static Dictionary<string, string> GameMove = new Dictionary<string, string>();
+	public async Task CreateGame(string game, string username)
     {
         if (GameGroups.ContainsKey(game))
         {
             throw new Exception("This game already exists!");
         }
 
-        GameGroups.Add(game, new List<Tuple<string, string?>>());
-
-        try
-        {
-			await Groups.AddToGroupAsync(Context.ConnectionId, game);
-		}
-        catch(Exception ex) 
-        {
-            Console.WriteLine(ex.Message);
-        }
+        GameGroups.Add(game, new List<Tuple<string, string, string?>>());
 
         await JoinGame(game, username);
     }
@@ -40,7 +33,16 @@ public class GameHub : Hub
             throw new Exception("This game is full!");
         }
 
-        GameGroups[game].Add(new Tuple<string, string?>(username, null));
+        GameGroups[game].Add(new Tuple<string, string, string?>(Context.ConnectionId, username, null));
+
+		try
+		{
+			await Groups.AddToGroupAsync(Context.ConnectionId, game);
+		}
+		catch (Exception ex)
+		{
+			Console.WriteLine(ex.Message);
+		}
 
 		try
 		{
@@ -59,20 +61,91 @@ public class GameHub : Hub
 
     public async Task StartGame(string game, string username, string field)
     {
-		int index = GameGroups[game].FindIndex(tuple => tuple.Item1 == username);
+		int index = GameGroups[game].FindIndex(tuple => tuple.Item2 == username);
 
 		if (index != -1)
 		{
-			GameGroups[game][index] = new Tuple<string, string?>(username, field);
+			GameGroups[game][index] = new Tuple<string, string, string?>(Context.ConnectionId, username, field);
 		}
 
-		if (GameGroups[game][0].Item2 == null || GameGroups[game][1].Item1 == null)
+		if (GameGroups[game][0].Item3 == null || GameGroups[game][1].Item3 == null)
 		{
-			await Clients.Group(game).SendAsync("Wait");
+			await Clients.Client(Context.ConnectionId).SendAsync("Wait");
 		}
 		else
 		{
 			await Clients.Group(game).SendAsync("Start");
-		}	
+		}
+	}
+
+	public string GetOpponentField(string game, string username)
+	{
+		int index = GameGroups[game].FindIndex(tuple => tuple.Item2 != username);
+
+		if (index != -1)
+		{
+			return GameGroups[game][index].Item3!;
+		}
+		else
+		{
+			return "";
+		}
+	}
+
+	public async Task Move(string game, string username, int x, int y, bool shot)
+	{
+		int index = GameGroups[game].FindIndex(tuple => tuple.Item2 != username);
+
+		if (index != -1)
+		{
+			await Clients.Client(GameGroups[game][index].Item1).SendAsync("GetMove", x, y, shot);
+		}
+
+		if (!shot)
+		{
+			await Clients.Group(game).SendAsync("Change");
+		}
+	}
+	public string GetContent(string username)
+	{
+		return FieldContent[username];
+	}
+	public void AddContent(string username, string content)
+	{
+		FieldContent.Add(username, content);
+	}
+	public string GetMove(string game)
+	{
+		return GameMove[game];
+	}
+	public void AddMove(string game, string username)
+	{
+		if (!GameMove.ContainsKey(game))
+		{
+			GameMove.Add(game, username);
+		}
+		else
+		{
+			GameMove[game] = username;
+		}
+	}
+
+	public async Task EndGame(string game, string username)
+	{
+		await Clients.Group(game).SendAsync("Finish", username);
+	}
+
+	public async Task DeleteGame(string game)
+	{
+		await Clients.Group(game).SendAsync("End");
+
+		FieldContent.Remove(GameGroups[game][0].Item2);
+		FieldContent.Remove(GameGroups[game][0].Item2);
+
+		await Groups.RemoveFromGroupAsync(GameGroups[game][0].Item1, game);
+		await Groups.RemoveFromGroupAsync(GameGroups[game][1].Item1, game);
+
+		GameMove.Remove(game);
+		GameGroups.Remove(game);
 	}
 }

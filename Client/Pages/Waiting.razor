@@ -28,6 +28,8 @@
 			Username = username;
 		}
 
+		await GameService.ConnectToHub();
+
 		GameService.CreateConnection("Notify", () =>
 		{
 			NavigationManager.NavigateTo($"/arrangement?GameId={GameId}&Username={Username}");
@@ -36,7 +38,5 @@
 		{
 			NavigationManager.NavigateTo($"/play?GameId={GameId}&Username={Username}");
 		});
-
-		await GameService.ConnectToHub();
 	}
 }

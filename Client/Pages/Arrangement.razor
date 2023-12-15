@@ -15,8 +15,8 @@
         <div id="text_top" class="flex text-top">The arrangement of ships</div>
 
 		<div class="flex outer">
-			<div class="field field-human">
-				<div id="field_human" class="ships"></div>
+			<div class="field">
+				<div id="field" class="ships"></div>
 			</div>
 			<div id="instruction" class="instruction">
 				<div id="type_placement" class="type-placement-box">
@@ -68,20 +68,20 @@
 
 		if (query.TryGetValue("GameId", out var gameId))
 		{
-			GameId = gameId;
+			GameId = gameId!;
 		}
 		if (query.TryGetValue("Username", out var username))
 		{
-			Username = username;
+			Username = username!;
 		}
 
-		GameService.CreateConnection("Wait", () =>
-		{
-			NavigationManager.NavigateTo($"/waiting?GameId={GameId}&Username={Username}");
-		});
 		GameService.CreateConnection("Start", () =>
 		{
 			NavigationManager.NavigateTo($"/play?GameId={GameId}&Username={Username}");
+		});
+		GameService.CreateConnection("Wait", () =>
+		{
+			NavigationManager.NavigateTo($"/waiting?GameId={GameId}&Username={Username}");
 		});
 
 		await GameService.ConnectToHub();
@@ -98,11 +98,9 @@
 			for (int j = 0; j < 10; j++)
 			{
 				int index = i * 10 + j;
-				field[i, j] = preField[index];
+				field![i, j] = preField[index];
 			}
 		}
-
-		Console.WriteLine(field);
 	}
 
 	private async Task InitializeScript()
@@ -124,11 +122,10 @@
 
 		string serializedField = JsonConvert.SerializeObject(field);
 
-		bool result = await GameService.StartGame(GameId, Username, serializedField);
+		var divContent = await JSRuntime.InvokeAsync<string>("getDivContent", "field");
+		await GameService.AddContent(Username, divContent);
+		await GameService.AddMove(GameId, Username);
 
-		if (result)
-		{
-			NavigationManager.NavigateTo($"/waiting?GameId={GameId}&Username={Username}");
-		}
+		await GameService.StartGame(GameId, Username, serializedField);
 	}
 }
