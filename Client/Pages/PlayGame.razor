@@ -1,7 +1,141 @@
 ﻿@page "/play"
 
+@inject NavigationManager NavigationManager
+@inject IGameService GameService
+@inject IJSRuntime JSRuntime
+
 <PageTitle>Play game</PageTitle>
 
-<div class="container">
-	<p>Play game...</p>
+<link href="css/style.css" rel="stylesheet">
+
+<div class="wrap">
+	<div class="battlefield">
+		<div class="flex outer">
+			<div class="field my-field">
+				<div id="my_field" class="ships" style="pointer-events: none;">
+					@((MarkupString) content)
+					@foreach (var iconHtml in getIconHtmlList)
+					{
+						@iconHtml
+					}
+				</div>
+			</div>
+			<div class="field other-field">
+				@if (move)
+				{
+					<div id="other_field" class="ships" @onclick="(e => Click(e))">
+						@foreach (var iconHtml in iconHtmlList)
+						{
+							@iconHtml
+						}
+					</div>
+				}
+				else
+				{
+					<div id="other_field" class="ships" style="pointer-events: none;" >
+						@foreach (var iconHtml in iconHtmlList)
+						{
+							@iconHtml
+						}
+					</div>
+				}
+				<p id="results" hidden></p>
+			</div>		
+		</div>
+	</div>
 </div>
+
+@code
+{
+	[Parameter] public string GameId { get; set; } = "";
+	[Parameter] public string Username { get; set; } = "";
+
+	private string matrix = "";
+	private string content = "";
+	private bool move = false;
+
+	private List<MarkupString> iconHtmlList = new List<MarkupString>();
+	private List<MarkupString> getIconHtmlList = new List<MarkupString>();
+
+	protected async override Task OnInitializedAsync()
+	{
+		var uri = new Uri(NavigationManager.Uri);
+		var query = QueryHelpers.ParseQuery(uri.Query);
+
+		if (query.TryGetValue("GameId", out var gameId))
+		{
+			GameId = gameId!;
+		}
+		if (query.TryGetValue("Username", out var username))
+		{
+			Username = username!;
+		}
+
+		content = await GameService.GetContent(Username!);
+		move = (await GameService.GetMove(GameId!)) == Username;
+
+		GameService.CreateConnection("GetMove", (x, y, shot) =>
+		{
+			if (shot)
+			{
+				var iconHtml = JSRuntime.InvokeAsync<string>("getshot", x, y).Result;
+				Console.WriteLine(iconHtml);
+				getIconHtmlList.Add(new MarkupString(iconHtml));
+				StateHasChanged();
+			}
+			else
+			{
+				var iconHtml = JSRuntime.InvokeAsync<string>("getmiss", x, y).Result;
+				Console.WriteLine(iconHtml);
+				getIconHtmlList.Add(new MarkupString(iconHtml));
+				StateHasChanged();
+			}
+		});
+		GameService.CreateConnection("Change", () =>
+		{
+			move = !move;
+			StateHasChanged();
+		});
+		GameService.CreateConnection("Finish", (username) =>
+		{
+			NavigationManager.NavigateTo($"/results?GameId={GameId}&Username={username}");
+		});
+
+		await GameService.ConnectToHub();
+
+		matrix = await GameService.GetOpponentField(GameId, Username);
+
+		await JSRuntime.InvokeVoidAsync("GameInit", matrix);
+	}
+
+	private async Task Click(MouseEventArgs e)
+	{
+		string iconHtml = await JSRuntime.InvokeAsync<string>("onOtherField", e);
+		iconHtmlList.Add(new MarkupString(iconHtml));
+		StateHasChanged();
+
+		string innerText = await JSRuntime.InvokeAsync<string>("getResults");
+
+		if (innerText == "Victory")
+		{
+			await GameService.EndGame(GameId, Username);
+			return;
+		}
+
+		string[] parts = innerText.Split(' ');
+
+		try
+		{
+			int.TryParse(parts[0], out int x);
+			int.TryParse(parts[1], out int y);
+			bool.TryParse(parts[2], out bool shot);
+
+			await GameService.Move(GameId, Username, x, y, shot);
+		}
+		catch (Exception ex)
+		{
+			Console.WriteLine(ex.Message);
+		}
+	}
+}
+

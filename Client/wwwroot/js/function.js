@@ -1,10 +1,13 @@
-window.Init = function () {
-		// 	/*
-		// 	0 - пустое место
-		// 	1 - палуба корабля
-		// 	2 - клетка рядом с кораблём
-		// 	*/
 
+window.getDivContent = function (elementId) {
+	if (document.title == "Arrangement") {
+		var div = document.getElementById(elementId);
+		return div.innerHTML;
+	}	
+}
+
+window.Init = function () {
+	if (document.title == "Arrangement") {
 		let startGame = false;
 		let isHandlerPlacement = false;
 
@@ -25,7 +28,7 @@ window.Init = function () {
 			}
 		};
 
-		const humanfield = getElement('field_human');
+		const field = getElement('field');
 
 		class Field {
 			static FIELD_SIDE = 330;
@@ -169,7 +172,7 @@ window.Init = function () {
 		}
 
 		class Placement {
-			static FRAME_COORDS = getCoordinates(humanfield);
+			static FRAME_COORDS = getCoordinates(field);
 
 			constructor() {
 				this.dragObject = {};
@@ -187,7 +190,7 @@ window.Init = function () {
 				document.addEventListener('mousedown', this.onMouseDown.bind(this));
 				document.addEventListener('mousemove', this.onMouseMove.bind(this));
 				document.addEventListener('mouseup', this.onMouseUp.bind(this));
-				humanfield.addEventListener('contextmenu', this.rotationShip.bind(this));
+				field.addEventListener('contextmenu', this.rotationShip.bind(this));
 				isHandlerPlacement = true;
 			}
 
@@ -211,7 +214,7 @@ window.Init = function () {
 					ky: 1
 				};
 
-				if (el.parentElement === humanfield) {
+				if (el.parentElement === field) {
 					const name = Placement.getShipName(el);
 
 					this.dragObject.kx = human.squadron[name].kx;
@@ -327,7 +330,7 @@ window.Init = function () {
 				const oldPosition = this.dragObject;
 
 				clone.rollback = () => {
-					if (oldPosition.parent == humanfield) {
+					if (oldPosition.parent == field) {
 						clone.style.left = `${oldPosition.left}px`;
 						clone.style.top = `${oldPosition.top}px`;
 						clone.style.zIndex = '';
@@ -352,7 +355,7 @@ window.Init = function () {
 				this.clone.style.left = `${left}px`;
 				this.clone.style.top = `${top}px`;
 
-				humanfield.appendChild(this.clone);
+				field.appendChild(this.clone);
 				this.clone.classList.remove('success');
 
 				const options = {
@@ -366,7 +369,7 @@ window.Init = function () {
 
 				const ship = new Ships(human, options);
 				ship.createShip();
-				humanfield.removeChild(this.clone);
+				field.removeChild(this.clone);
 			}
 
 			getCoordsCloneInMatrix({ left, right, top, bottom } = coords) {
@@ -404,7 +407,7 @@ window.Init = function () {
 		const shipsCollection = getElement('ships_collection');
 		const initialShips = document.querySelector('.wrap + .initial-ships');
 		const buttonPlay = getElement('play');
-		const human = new Field(humanfield);
+		const human = new Field(field);
 
 		getElement('type_placement').addEventListener('click', function (e) {
 			if (e.target.tagName != 'SPAN') return;
@@ -440,8 +443,86 @@ window.Init = function () {
 			placement.setObserver();
 		});
 
-	window.getMatrix = function () {
-		const flatArray = Array.from(human.matrix.flat());
-		return flatArray;
+		window.getMatrix = function () {
+			if (document.title == "Arrangement") {
+				const flatArray = Array.from(human.matrix.flat());
+				return flatArray;
+			}
+		}
+	}
+}
+
+window.GameInit = function(matrixText) {
+	var matrix = JSON.parse(matrixText);
+	var counter = 20;
+
+	const SHIP_SIDE = 33;
+
+	const getCoordinates = el => {
+		const coords = el.getBoundingClientRect();
+		return {
+			left: coords.left + window.pageXOffset,
+			right: coords.right + window.pageXOffset,
+			top: coords.top + window.pageYOffset,
+			bottom: coords.bottom + window.pageYOffset
+		};
+	};
+
+	const myfield = document.getElementById('my_field');
+	const otherfield = document.getElementById('other_field');
+	const results = document.getElementById('results');
+	let { left, right, top, bottom } = getCoordinates(otherfield);
+
+	function transformCoordsInMatrix(e) {
+		const x = Math.trunc((e.pageY - top) / SHIP_SIDE);
+		const y = Math.trunc((e.pageX - left) / SHIP_SIDE);
+		return [x, y];
+	}
+
+	function showIcons(field, [x, y], iconClass) {
+		const span = document.createElement('span');
+		span.className = `icon-field ${iconClass}`;
+		span.style.cssText = `left:${y * SHIP_SIDE}px; top:${x * SHIP_SIDE}px;`;
+		field.appendChild(span);
+		return span.outerHTML;
+	}
+
+	function miss(x, y) {
+		matrix[x][y] = 3;
+		return showIcons(otherfield, [x, y], 'dot');
+	}
+	function shot(x, y) {
+		matrix[x][y] = 4;
+		return showIcons(otherfield, [x, y], 'red-cross');
+	}
+
+	window.getmiss = function (x, y) {
+		return showIcons(myfield, [x, y], 'dot');
+	}
+	window.getshot = function (x, y) {
+		return showIcons(myfield, [x, y], 'red-cross');
+	}
+
+	window.onOtherField = function (e) {
+		let [x, y] = transformCoordsInMatrix(e);
+
+		if (matrix[x][y] == 0) {
+			results.innerText = `${x} ${y} false`;
+			return miss(x, y);
+		}
+		else if (matrix[x][y] == 1) {
+			counter--;
+			if (counter == 0) {
+				results.innerText = "Victory";
+			} else {
+				results.innerText = `${x} ${y} true`
+			}
+			return shot(x, y);
+		}
+	}
+
+	window.getResults = function () {
+		const el = document.getElementById('results');
+		return el.innerText;
 	}
 }
