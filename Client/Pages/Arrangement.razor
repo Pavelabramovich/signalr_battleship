@@ -4,6 +4,9 @@
 @inject NavigationManager NavigationManager
 @inject IGameService GameService
 
+@implements IDisposable
+
+
 <PageTitle>Arrangement</PageTitle>
 
 <link href="css/style.css" rel="stylesheet">
@@ -58,28 +61,38 @@
 
 @code
 {
-	[Parameter] public string GameId { get; set; } = "";
-	[Parameter] public string Username { get; set; } = "";
+	[SupplyParameterFromQuery]
+	[Parameter]
+	public string GameId { get; set; } = "";
+
+	[SupplyParameterFromQuery]
+	[Parameter] 
+	public string Username { get; set; } = "";
+
+	private IDisposable? _wait;
+	private IDisposable? _start;
 
 	protected async override Task OnInitializedAsync()
 	{
-		var uri = new Uri(NavigationManager.Uri);
-		var query = QueryHelpers.ParseQuery(uri.Query);
+	//	var uri = new Uri(NavigationManager.Uri);
+	//	var query = QueryHelpers.ParseQuery(uri.Query);
 
-		if (query.TryGetValue("GameId", out var gameId))
-		{
-			GameId = gameId!;
-		}
-		if (query.TryGetValue("Username", out var username))
-		{
-			Username = username!;
-		}
+		// if (query.TryGetValue("GameId", out var gameId))
+		// {
+		// 	await Console.Out.WriteLineAsync(uri.Query);
+		// 	GameId = gameId!;
+		// 	await Console.Out.WriteLineAsync(GameId + " <- game id");
+		// }
+		// if (query.TryGetValue("Username", out var username))
+		// {
+		// 	Username = username!;
+		// }
 
-		GameService.CreateConnection("Start", () =>
+		_start = GameService.CreateConnection("Start", () =>
 		{
 			NavigationManager.NavigateTo($"/play?GameId={GameId}&Username={Username}");
 		});
-		GameService.CreateConnection("Wait", () =>
+		_wait = GameService.CreateConnection("Wait", () =>
 		{
 			NavigationManager.NavigateTo($"/waiting?GameId={GameId}&Username={Username}");
 		});
@@ -92,6 +105,8 @@
 	private async Task UpdateFieldAsync()
 	{
 		int[] preField = await JSRuntime.InvokeAsync<int[]>("getMatrix");
+
+		Console.WriteLine($"{preField.Aggregate("", (c1, c2) => $"{c1}, {c2}")} preField from arragment update field async");
 
 		for (int i = 0; i < 10; i++)
 		{
@@ -126,6 +141,13 @@
 		await GameService.AddContent(Username, divContent);
 		await GameService.AddMove(GameId, Username);
 
+		await Console.Out.WriteLineAsync(GameId + " <- game id2");
 		await GameService.StartGame(GameId, Username, serializedField);
+	}
+
+	public void Dispose()
+	{
+		_wait?.Dispose();
+		_start?.Dispose();
 	}
 }

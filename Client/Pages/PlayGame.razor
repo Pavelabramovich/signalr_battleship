@@ -4,6 +4,9 @@
 @inject IGameService GameService
 @inject IJSRuntime JSRuntime
 
+@implements IDisposable
+
+
 <PageTitle>Play game</PageTitle>
 
 <link href="css/style.css" rel="stylesheet">
@@ -47,8 +50,13 @@
 
 @code
 {
-	[Parameter] public string GameId { get; set; } = "";
-	[Parameter] public string Username { get; set; } = "";
+	[SupplyParameterFromQuery]
+	[Parameter] 
+	public string GameId { get; set; } = "";
+
+	[SupplyParameterFromQuery]
+	[Parameter]
+	public string Username { get; set; } = "";
 
 	private string matrix = "";
 	private string content = "";
@@ -57,60 +65,75 @@
 	private List<MarkupString> iconHtmlList = new List<MarkupString>();
 	private List<MarkupString> getIconHtmlList = new List<MarkupString>();
 
+	private IDisposable? _change;
+	private IDisposable? _finish;
+	private IDisposable? _getMove;
+
 	protected async override Task OnInitializedAsync()
 	{
-		var uri = new Uri(NavigationManager.Uri);
-		var query = QueryHelpers.ParseQuery(uri.Query);
+		//var uri = new Uri(NavigationManager.Uri);
+		//var query = QueryHelpers.ParseQuery(uri.Query);
 
-		if (query.TryGetValue("GameId", out var gameId))
-		{
-			GameId = gameId!;
-		}
-		if (query.TryGetValue("Username", out var username))
-		{
-			Username = username!;
-		}
+		// if (query.TryGetValue("GameId", out var gameId))
+		// {
+		// 	GameId = gameId!;
+		// }
+		// if (query.TryGetValue("Username", out var username))
+		// {
+		// 	Username = username!;
+		// }
 
 		content = await GameService.GetContent(Username!);
 		move = (await GameService.GetMove(GameId!)) == Username;
 
-		GameService.CreateConnection("GetMove", (x, y, shot) =>
+		Console.WriteLine(content);
+		Console.WriteLine(move);
+
+		_getMove = GameService.CreateConnection("GetMove", async (x, y, shot) =>
 		{
+			Console.WriteLine("shot " + shot);
 			if (shot)
 			{
-				var iconHtml = JSRuntime.InvokeAsync<string>("getshot", x, y).Result;
+				var iconHtml = await JSRuntime.InvokeAsync<string>("getshot", x, y);
 				Console.WriteLine(iconHtml);
 				getIconHtmlList.Add(new MarkupString(iconHtml));
 				StateHasChanged();
 			}
 			else
 			{
-				var iconHtml = JSRuntime.InvokeAsync<string>("getmiss", x, y).Result;
+				var iconHtml = await JSRuntime.InvokeAsync<string>("getmiss", x, y);
 				Console.WriteLine(iconHtml);
 				getIconHtmlList.Add(new MarkupString(iconHtml));
 				StateHasChanged();
 			}
 		});
-		GameService.CreateConnection("Change", () =>
+		_change = GameService.CreateConnection("Change", () =>
 		{
 			move = !move;
 			StateHasChanged();
 		});
-		GameService.CreateConnection("Finish", (username) =>
+		_finish = GameService.CreateConnection("Finish", (username) =>
 		{
 			NavigationManager.NavigateTo($"/results?GameId={GameId}&Username={username}");
+			StateHasChanged();
 		});
 
 		await GameService.ConnectToHub();
 
+		//Console.WriteLine($"GameId = {GameId}, UserName = {Username} in playGame");
 		matrix = await GameService.GetOpponentField(GameId, Username);
+		Console.WriteLine($"{matrix} in playGame");
 
 		await JSRuntime.InvokeVoidAsync("GameInit", matrix);
+		StateHasChanged();
 	}
 
 	private async Task Click(MouseEventArgs e)
 	{
 		string iconHtml = await JSRuntime.InvokeAsync<string>("onOtherField", e);
+
+		Console.WriteLine(iconHtml + " icon html");
+
 		iconHtmlList.Add(new MarkupString(iconHtml));
 		StateHasChanged();
 
@@ -119,8 +142,11 @@
 		if (innerText == "Victory")
 		{
 			await GameService.EndGame(GameId, Username);
+			StateHasChanged();
 			return;
 		}
+
+		Console.WriteLine(innerText + " inner text");
 
 		string[] parts = innerText.Split(' ');
 
@@ -131,11 +157,19 @@
 			bool.TryParse(parts[2], out bool shot);
 
 			await GameService.Move(GameId, Username, x, y, shot);
+			StateHasChanged();
 		}
 		catch (Exception ex)
 		{
 			Console.WriteLine(ex.Message);
 		}
+	}
+
+	public void Dispose()
+	{
+		_change?.Dispose();
+		_finish?.Dispose();
+		_getMove?.Dispose();
 	}
 }
 

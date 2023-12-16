@@ -1,4 +1,10 @@
-﻿using Microsoft.AspNetCore.SignalR.Client;
+﻿using Microsoft.AspNetCore.SignalR;
+using Microsoft.AspNetCore.SignalR.Client;
+using Microsoft.JSInterop;
+using Newtonsoft.Json.Linq;
+
+
+//builder.Services.AddSingleton<IJSRuntime, JSRuntime>();
 
 namespace BattleShip.Client.Services
 {
@@ -6,11 +12,15 @@ namespace BattleShip.Client.Services
     {
         private readonly HubConnection _connection;
 
-        public GameService()
+		private readonly IJSRuntime _jsRuntime;
+
+        public GameService(IJSRuntime jsRuntime)
         {
             _connection = new HubConnectionBuilder()
                         .WithUrl("https://localhost:5001/gamehub")
                         .Build();
+
+			_jsRuntime = jsRuntime;
 		}
 
         public async Task ConnectToHub()
@@ -25,18 +35,23 @@ namespace BattleShip.Client.Services
             }
         }
 
-		public void CreateConnection(string method, Action handler)
+		public IDisposable CreateConnection(string method, Action handler)
 		{
-			_connection.On(method, handler);
+			return _connection.On(method, handler);
 		}
-		public void CreateConnection(string method, Action<string> handler)
+		public IDisposable CreateConnection(string method, Action<string> handler)
 		{
-			_connection.On(method, handler);
+			return _connection.On(method, handler);
 		}
-		public void CreateConnection(string method, Action<int, int, bool> handler)
+		public IDisposable CreateConnection(string method, Action<int, int, bool> handler)
         {         
-			_connection.On(method, handler);
+			return _connection.On(method, handler);
         }
+
+		public void RemoveConnections(string method)
+		{
+			_connection.Remove(method);
+		}
 
         public async Task<bool> CreateGame(string game, string username)
         {
@@ -45,9 +60,11 @@ namespace BattleShip.Client.Services
 				await _connection.InvokeAsync("CreateGame", game, username);
                 return true;
             }
-            catch (Exception ex)
+            catch (HubException ex)
             {
-                Console.WriteLine(ex.Message);
+				await _jsRuntime.InvokeVoidAsync("alert", ex.Message);
+
+				Console.WriteLine(ex.Message);
                 return false;
             }
         }
@@ -59,8 +76,10 @@ namespace BattleShip.Client.Services
 				await _connection.InvokeAsync("JoinGame", game, username);
                 return true;
             }
-            catch (Exception ex)
+            catch (HubException ex)
             {
+				await _jsRuntime.InvokeVoidAsync("alert", ex.Message);
+
 				Console.WriteLine(ex.Message);
 				return false;
             }
@@ -70,7 +89,9 @@ namespace BattleShip.Client.Services
         {
 			try
 			{
-				await _connection.InvokeAsync("StartGame", game, username, field);
+                await Console.Out.WriteLineAsync($"{game} {username} {field} field from StartGame in gameService");
+
+                await _connection.InvokeAsync("StartGame", game, username, field);
 				return true;
 			}
 			catch (Exception ex)
