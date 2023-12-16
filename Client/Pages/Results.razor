@@ -23,22 +23,27 @@
 
 @code
 {
-	[Parameter] public string? GameId { get; set; } = "";
-	[Parameter] public string? Username { get; set; } = "";
+	[SupplyParameterFromQuery]
+	[Parameter]
+	public string? GameId { get; set; } = "";
+
+	[SupplyParameterFromQuery]
+	[Parameter]
+	public string? Username { get; set; } = "";
 
 	protected async override Task OnInitializedAsync()
 	{
 		var uri = new Uri(NavigationManager.Uri);
 		var query = QueryHelpers.ParseQuery(uri.Query);
 
-		if (query.TryGetValue("GameId", out var gameId))
-		{
-			GameId = gameId;
-		}
-		if (query.TryGetValue("Username", out var username))
-		{
-			Username = username;
-		}
+		// if (query.TryGetValue("GameId", out var gameId))
+		// {
+		// 	GameId = gameId;
+		// }
+		// if (query.TryGetValue("Username", out var username))
+		// {
+		// 	Username = username;
+		// }
 
 		GameService.CreateConnection("End", () =>
 		{

@@ -33,7 +33,10 @@
 
 	private async Task Create()
 	{
+		await Console.Out.WriteLineAsync(GameId + "<<<<<< +game_id+");
 		bool result = await GameService.CreateGame(GameId, Username);
+
+		Console.WriteLine("Result is " + result);
 
 		if (result)
 		{
