@@ -76,23 +76,29 @@ public partial class PlayGame
     {
         string iconHtml = await JSRuntime.InvokeAsync<string>("onOtherField", e);
         Console.WriteLine(iconHtml + " icon html");
+
         iconHtmlList.Add(new MarkupString(iconHtml));
         StateHasChanged();
         string innerText = await JSRuntime.InvokeAsync<string>("getResults");
+
         if (innerText == "Victory")
         {
             await GameService.EndGame(GameId, Username);
             StateHasChanged();
             return;
+        } 
+        else if (innerText == "Skip")
+        {
+            return;
         }
 
-        Console.WriteLine(innerText + " inner text");
         string[] parts = innerText.Split(' ');
         try
         {
             int.TryParse(parts[0], out int x);
             int.TryParse(parts[1], out int y);
             bool.TryParse(parts[2], out bool shot);
+
             await GameService.Move(GameId, Username, x, y, shot);
             StateHasChanged();
         }
