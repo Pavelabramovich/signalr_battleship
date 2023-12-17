@@ -1,4 +1,6 @@
-﻿namespace BattleShip.Shared.Models;
+﻿using System.Runtime.CompilerServices;
+
+namespace BattleShip.Shared.Models;
 
 
 /// <include file='Documentation/Grid.xml' path='doc/class[@name="Grid"]/description' />
@@ -146,6 +148,15 @@ public class Grid
             }
         }
     }
+
+    public BattleSquare[,] Field => (BattleSquare[,])_field.Clone();
+
+
+    public BattleSquare this[int x, int y]
+    {
+        get => _field[x, y];
+    }
+
 
     /// <include file='Documentation/Grid.xml' path='doc/class[@name="Grid"]/method[@name="ToString"]' />
     public override string ToString()

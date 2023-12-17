@@ -13,6 +13,7 @@ builder.RootComponents.Add<HeadOutlet>("head::after");
 //builder.Services.AddSingleton<IJSRuntime, JSRuntime>();
 
 builder.Services.AddScoped<IGameService, GameService>();
+builder.Services.AddScoped<IPageJsInvokeService, PageJsInvokeService>();
 
 builder.Services.AddScoped(sp => new HttpClient { BaseAddress = new Uri(builder.HostEnvironment.BaseAddress) });
 

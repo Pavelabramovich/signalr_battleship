@@ -11,13 +11,6 @@ public record struct BuilderSquare(Color SeaColor, OrientedShipPart? OrientedShi
     {
         //return $"{SeaColor.Name.ToLower()[0]}_{(OrientedShipPart is null ? "." : OrientedShipPart?.ShipPart.ToString().Substring(0, 3))}";
 
-        if (OrientedShipPart is null)
-        {
-            return " ";
-        }
-        else
-        {
-            return "B";
-        }
+        return OrientedShipPart is null ? " " : "█";
     }
 }

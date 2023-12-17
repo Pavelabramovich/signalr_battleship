@@ -87,6 +87,15 @@ public class GridBuilder
         return this;
     }
 
+
+    public GridBuilder Clear()
+    {
+        _selectedShip = null;
+        _ships.Clear();
+
+        return this;
+    }
+
     /// <include file='Documentation/GridBuilder.xml' path='doc/class[@name="GridBuilder"]/method[@name="SelectShip"]' />
     public GridBuilder SelectShip(int x, int y)
     {
@@ -198,7 +207,7 @@ public class GridBuilder
     {
         get
         {
-            BuilderSquare[,] squares = BuilderSquares;
+            BuilderSquare[,] squares = Field;
 
             for (int i = 0; i < SizeY; i++)
             {
@@ -209,18 +218,83 @@ public class GridBuilder
         }
     }
 
+	public BuilderSquare[,] Field
+	{
+		get
+		{
+			static BuilderSquare modifyShipPart(Ship ship, BuilderSquare s, int i)
+			{
+				ShipPart newShipPart;
+
+				if (ship.Size == 1)
+				{
+					newShipPart = ShipPart.Start | ShipPart.End;
+				}
+				else if (i == 0)
+				{
+					newShipPart = ShipPart.End;
+				}
+				else if (i == ship.Size - 1)
+				{
+					newShipPart = ShipPart.Start;
+				}
+				else
+				{
+					newShipPart = ShipPart.Center;
+				}
+
+				return s with { OrientedShipPart = (s.OrientedShipPart ?? new()) with { ShipPart = newShipPart } };
+			}
+
+			static BuilderSquare modifyOrientation(Ship ship, BuilderSquare s)
+			{
+				return s with { OrientedShipPart = (s.OrientedShipPart ?? new()) with { Orientation = ship.Orientation } };
+			}
 
 
+			var squares = new BuilderSquare[SizeY, SizeX];
 
-    /// <include file='Documentation/GridBuilder.xml' path='doc/class[@name="GridBuilder"]/method[@name="Build"]' />
-    public Grid Build()
+			foreach (var ship in _ships.Values)
+			{
+				MarkShip(ship, modifyShipPart, squares);
+				MarkShip(ship, modifyOrientation, squares);
+			}
+
+			if (_selectedShip is not null)
+			{
+				Color borderColor = IsSelectedShipValid() ? Color.Green : Color.Red;
+
+				BuilderSquare modifySeaColor(BuilderSquare s)
+				{
+					return s with { SeaColor = borderColor };
+				}
+
+				MarkShip(_selectedShip, modifyShipPart, squares);
+				MarkShip(_selectedShip, modifyOrientation, squares);
+
+				MarkBorder(_selectedShip, modifySeaColor, squares);
+			}
+
+			return squares;
+		}
+	}
+
+
+	public BuilderSquare this[int x, int y]
+	{
+		get => Field[x, y];
+	}
+
+
+	/// <include file='Documentation/GridBuilder.xml' path='doc/class[@name="GridBuilder"]/method[@name="Build"]' />
+	public Grid Build()
     {
         if (!IsSelectedShipValid())
             throw new InvalidOperationException("Can't build grid because selected ship is invalid");
 
         SaveSelectedShip();
 
-        BuilderSquare[,] builderSquares = BuilderSquares;
+        BuilderSquare[,] builderSquares = Field;
 
         BattleSquare[,] battleSquares = new BattleSquare[SizeY, SizeX];
         
@@ -257,67 +331,7 @@ public class GridBuilder
         return res;
     }
 
-    private BuilderSquare[,] BuilderSquares
-    {
-        get
-        {
-            static BuilderSquare modifyShipPart(Ship ship, BuilderSquare s, int i)
-            {
-                ShipPart newShipPart;
-
-                if (ship.Size == 1)
-                {
-                    newShipPart = ShipPart.Start | ShipPart.End;
-                }
-                else if (i == 0)
-                {
-                    newShipPart = ShipPart.End;
-                }
-                else if (i == ship.Size - 1)
-                {
-                    newShipPart = ShipPart.Start;
-                }
-                else
-                {
-                    newShipPart = ShipPart.Center;
-                }
-
-                return s with { OrientedShipPart = (s.OrientedShipPart ?? new()) with { ShipPart = newShipPart } };
-            }
-
-            static BuilderSquare modifyOrientation(Ship ship, BuilderSquare s)
-            {
-                return s with { OrientedShipPart = (s.OrientedShipPart ?? new()) with { Orientation = ship.Orientation } };
-            }
-
-
-            var squares = new BuilderSquare[SizeY, SizeX];
-
-            foreach (var ship in _ships.Values)
-            {
-                MarkShip(ship, modifyShipPart, squares);
-                MarkShip(ship, modifyOrientation, squares);
-            }
-
-            if (_selectedShip is not null)
-            {
-                Color borderColor = IsSelectedShipValid() ? Color.Green : Color.Red;
-
-                BuilderSquare modifySeaColor(BuilderSquare s)
-                {
-                    return s with { SeaColor = borderColor };
-                }
-
-                MarkShip(_selectedShip, modifyShipPart, squares);
-                MarkShip(_selectedShip, modifyOrientation, squares);
-
-                MarkBorder(_selectedShip, modifySeaColor, squares);
-            }
-
-            return squares;
-        }
-    }
-
+    
 
     private static bool IsIntersectedWith(int x, int y, Ship ship)
     {

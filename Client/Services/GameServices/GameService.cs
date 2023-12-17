@@ -4,8 +4,6 @@ using Microsoft.JSInterop;
 using Newtonsoft.Json.Linq;
 
 
-//builder.Services.AddSingleton<IJSRuntime, JSRuntime>();
-
 namespace BattleShip.Client.Services
 {
     public class GameService : IGameService
