@@ -726,7 +726,9 @@ window.GameInit = function (matrixText) {
 					res = `${x} ${y} true`;
 				}
 				return shot(x, y);
-			}
+			} else {
+				res = "Skip";
+			} 
 		}
 
 		window.getResults = function () {
