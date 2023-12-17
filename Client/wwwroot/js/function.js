@@ -7,12 +7,18 @@ window.getDivContent = function (elementId) {
 }
 
 
+
 var listners = [];
 
 var M = [];
 
 
 window.Init = function () {
+	shipOrientation = {
+		LeftRight: 0,
+		TopDown: 1,
+	}
+
 	if (document.title == "Arrangement") {
 
 		/// remove old event listners
@@ -92,6 +98,11 @@ window.Init = function () {
 			}
 
 			randomLocationShips() {
+
+				window
+					.getPageRef("Arrangement")
+					.invokeMethodAsync('ClearShips');
+
 				for (let type in Field.SHIP_DATA) {
 					let count = Field.SHIP_DATA[type][0];
 					let decks = Field.SHIP_DATA[type][1];
@@ -101,11 +112,19 @@ window.Init = function () {
 						options.decks = decks;
 						options.shipname = type + String(i + 1);
 						const ship = new Ships(this, options);
+
 						ship.createShip();
+
+						window
+							.getPageRef("Arrangement")
+							.invokeMethodAsync('AddShip', options.y, options.x, options.decks, options.kx == 0 ? shipOrientation.LeftRight : shipOrientation.TopDown);
+
+						
 					}
 				}
 
 				M = Array.from(human.matrix.flat());
+				console.log(JSON.stringify(human.matrix));
 			}
 
 			getCoordsDecks(decks) {
@@ -245,10 +264,14 @@ window.Init = function () {
 			}
 
 			onMouseDown(e) {
+		
 				if (e.which != 1 || startGame) return;
 
 				const el = e.target.closest('.ship');
-				if (!el) return;
+
+				if (!el) {
+					return;
+				}
 
 				this.pressed = true;
 
@@ -281,7 +304,11 @@ window.Init = function () {
 					this.decks = Placement.getCloneDecks(this.dragObject.el);
 					this.clone = this.creatClone({ left, right, top, bottom }) || null;
 
-					if (!this.clone) return;
+					if (!this.clone) {
+						return;
+					}
+
+					
 
 					this.shiftX = this.dragObject.downX - left;
 					this.shiftY = this.dragObject.downY - top;
@@ -329,11 +356,15 @@ window.Init = function () {
 			}
 
 			onMouseUp(e) {
+		
 				this.pressed = false;
 
-				if (!this.clone) return;
+				if (!this.clone) {
+					return;
+				}
 
 				if (this.clone.classList.contains('unsuccess')) {
+					alert("INVALID");
 					this.clone.classList.remove('unsuccess');
 					this.clone.rollback();
 				} else {
@@ -345,17 +376,25 @@ window.Init = function () {
 			}
 
 			rotationShip(e) {
+		
 				e.preventDefault();
+		
 
 				if (e.which != 3 || startGame) return;
 
 				const el = e.target.closest('.ship');
 				const name = Placement.getShipName(el);
 
-				if (human.squadron[name].decks == 1) return;
+				if (human.squadron[name].decks == 1) {
+					return;
+				}
+
+	
+
 				const obj = {
 					kx: (human.squadron[name].kx == 0) ? 1 : 0,
 					ky: (human.squadron[name].ky == 0) ? 1 : 0,
+
 					x: human.squadron[name].x,
 					y: human.squadron[name].y
 				};
@@ -365,6 +404,7 @@ window.Init = function () {
 				human.field.removeChild(el);
 
 				const result = human.checkLocationShip(obj, decks);
+
 				if (!result) {
 					obj.kx = (obj.kx == 0) ? 1 : 0;
 					obj.ky = (obj.ky == 0) ? 1 : 0;
@@ -380,9 +420,16 @@ window.Init = function () {
 					const el = getElement(name);
 					el.classList.add('unsuccess');
 					setTimeout(() => { el.classList.remove('unsuccess') }, 750);
-				}
+				} 
+
+				window
+					.getPageRef("Arrangement")
+					.invokeMethodAsync('AddShip', obj.y, obj.x, obj.decks, obj.kx == 0 ? shipOrientation.LeftRight : shipOrientation.TopDown);
+
+				
 
 				M = Array.from(human.matrix.flat());
+				console.log(JSON.stringify(human.matrix));
 			}
 
 			creatClone() {
@@ -391,6 +438,8 @@ window.Init = function () {
 
 				clone.rollback = () => {
 					if (oldPosition.parent == field) {
+						//alert(JSON.stringify(oldPosition));
+
 						clone.style.left = `${oldPosition.left}px`;
 						clone.style.top = `${oldPosition.top}px`;
 						clone.style.zIndex = '';
@@ -413,9 +462,14 @@ window.Init = function () {
 			}
 
 			createShipAfterMoving() {
+		
 				const coords = getCoordinates(this.clone);
 
+				alert(JSON.stringify(coords));
+
 				let { left, top, x, y } = this.getCoordsCloneInMatrix(coords);
+
+				alert(JSON.stringify({ left, top, x, y }));
 
 				this.clone.style.left = `${left}px`;
 				this.clone.style.top = `${top}px`;
@@ -427,16 +481,23 @@ window.Init = function () {
 					shipname: Placement.getShipName(this.clone),
 					x,
 					y,
+
 					kx: this.dragObject.kx,
 					ky: this.dragObject.ky,
+
 					decks: this.decks
 				};
+
+				window
+					.getPageRef("Arrangement")
+					.invokeMethodAsync('AddShip', options.y, options.x, options.decks, options.kx == 0 ? shipOrientation.LeftRight : shipOrientation.TopDown);
 
 				const ship = new Ships(human, options);
 				ship.createShip();
 				field.removeChild(this.clone);
 
 				M = Array.from(human.matrix.flat());
+				console.log(JSON.stringify(human.matrix));
 			}
 
 			getCoordsCloneInMatrix({ left, right, top, bottom } = coords) {
@@ -447,16 +508,20 @@ window.Init = function () {
 
 				const obj = {};
 
+				console.log(JSON.stringify({ left, right, top, bottom }));
+
+				let o = this.dragObject.kx == 0 ? shipOrientation.LeftRight : shipOrientation.TopDown;
+				
 				let ft = (computedTop < 0)
 					? 0
 					: (computedBottom > Field.FIELD_SIDE)
-						? Field.FIELD_SIDE - Field.SHIP_SIDE
+						? Field.FIELD_SIDE - Field.SHIP_SIDE * (o == shipOrientation.TopDown ? this.decks : 1)
 						: computedTop;
 
 				let fl = (computedLeft < 0)
 					? 0
 					: (computedRight > Field.FIELD_SIDE)
-						? Field.FIELD_SIDE - Field.SHIP_SIDE * this.decks
+						? Field.FIELD_SIDE - Field.SHIP_SIDE * (o == shipOrientation.LeftRight ? this.decks : 1)
 						: computedLeft;
 
 				obj.top = Math.round(ft / Field.SHIP_SIDE) * Field.SHIP_SIDE;
@@ -465,6 +530,8 @@ window.Init = function () {
 				obj.x = obj.top / Field.SHIP_SIDE;
 				obj.y = obj.left / Field.SHIP_SIDE;
 
+				console.log(JSON.stringify(obj));
+
 				M = Array.from(human.matrix.flat());
 
 				return obj;
@@ -472,16 +539,31 @@ window.Init = function () {
 
 			removeShipFromSquadron(el) {
 				const name = Placement.getShipName(el);
-				if (!human.squadron[name]) return;
+
+				if (!human.squadron[name]) {
+					return;
+				}
 
 				const arr = human.squadron[name].arrDecks;
 				for (let coords of arr) {
 					const [x, y] = coords;
 					human.matrix[x][y] = 0;
 				}
+
+
+				let x = arr[0][0]
+				let y = arr[0][1]
+				
+
+				window
+					.getPageRef("Arrangement")
+					.invokeMethodAsync('RemoveShip', y, x);
+
+
 				delete human.squadron[name];
 
 				M = Array.from(human.matrix.flat());
+				console.log(JSON.stringify(human.matrix));
 			}
 		}
 		const shipsCollection = getElement('ships_collection');
@@ -490,7 +572,9 @@ window.Init = function () {
 		const human = new Field(field);
 
 		getElement('type_placement').addEventListener('click', function (e) {
-			if (e.target.tagName != 'SPAN') return;
+			if (e.target.tagName != 'SPAN') {
+				return;
+			}
 
 			buttonPlay.hidden = true;
 			human.cleanField();
@@ -506,17 +590,21 @@ window.Init = function () {
 					M = Array.from(human.matrix.flat());
 				},
 				manually() {
-					let value = !shipsCollection.hidden;
+					window
+						.getPageRef("Arrangement")
+						.invokeMethodAsync('ClearShips');
+
+					//let value = !shipsCollection.hidden;
 
 					if (shipsCollection.children.length > 1) {
 						shipsCollection.removeChild(shipsCollection.lastChild);
 					}
-					if (!value) {
+			//		if (!value) {
 						initialShipsClone = initialShips.cloneNode(true);
 						shipsCollection.appendChild(initialShipsClone);
 						initialShipsClone.hidden = false;
-					}
-					shipsCollection.hidden = value;
+			//		}
+					shipsCollection.hidden = false;
 
 					M = Array.from(human.matrix.flat());
 				}
@@ -553,11 +641,7 @@ window.GameInit = function (matrixText) {
 			listners2 = [];
 		}
 
-	//	console.log(matrixText + " in GameInit");
-
 		matrix = JSON.parse(matrixText);
-
-	//	console.log(matrix + " in GameInit");
 
 		const SHIP_SIDE = 33;
 

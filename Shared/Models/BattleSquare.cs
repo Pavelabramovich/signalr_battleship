@@ -7,7 +7,7 @@ namespace BattleShip.Shared.Models;
 /// <include file='Documentation/BattleSquare.xml' path='doc/class[@name="BattleSquare"]/description' />
 public class BattleSquare
 {
-    public ShotStatus ShotStatus { get; set; }
+    public ShotStatus ShotStatus { get; internal set; }
     public OrientedShipPart? OrientedShipPart { get; private set; }
 
 
