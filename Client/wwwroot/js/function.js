@@ -364,7 +364,7 @@ window.Init = function () {
 				}
 
 				if (this.clone.classList.contains('unsuccess')) {
-					alert("INVALID");
+				//	alert("INVALID");
 					this.clone.classList.remove('unsuccess');
 					this.clone.rollback();
 				} else {
@@ -465,11 +465,11 @@ window.Init = function () {
 		
 				const coords = getCoordinates(this.clone);
 
-				alert(JSON.stringify(coords));
+			//	alert(JSON.stringify(coords));
 
 				let { left, top, x, y } = this.getCoordsCloneInMatrix(coords);
 
-				alert(JSON.stringify({ left, top, x, y }));
+			//	alert(JSON.stringify({ left, top, x, y }));
 
 				this.clone.style.left = `${left}px`;
 				this.clone.style.top = `${top}px`;

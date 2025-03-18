@@ -19,8 +19,11 @@ using Microsoft.AspNetCore.Components;
 using System;
 using System.Collections.Specialized;
 using System.Web;
+using System.Reflection;
+
 
 namespace BattleShip.Client.Pages;
+
 
 public partial class PlayGame
 {
@@ -69,8 +72,10 @@ public partial class PlayGame
         matrix = await GameService.GetOpponentField(GameId, Username);
         Console.WriteLine($"{matrix} in playGame");
         await JSRuntime.InvokeVoidAsync("GameInit", matrix);
-        StateHasChanged();
-    }
+		StateHasChanged();
+
+		//_result = await JSModule.Exports.run<string>(DateTime.Now.ToLongTimeString());
+	}
 
     private async Task Click(MouseEventArgs e)
     {
@@ -106,6 +111,8 @@ public partial class PlayGame
         {
             Console.WriteLine(ex.Message);
         }
+
+        var _result = await JSModule.Exports.run<string>(DateTime.Now.ToLongTimeString());
     }
 
     public void Dispose()

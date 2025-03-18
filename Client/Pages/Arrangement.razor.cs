@@ -44,6 +44,7 @@ public partial class Arrangement : IDisposable
 
     private bool _disposed = false;
 
+
     public Arrangement()
     { 
 		_gridBuilder = new GridBuilder();
@@ -129,7 +130,7 @@ public partial class Arrangement : IDisposable
         {
             await InitializeScript();
 
-				await _pageJsInvokeService.RegisterAsync(this);
+			await _pageJsInvokeService.RegisterAsync(this);
 		}
 
 		await base.OnAfterRenderAsync(firstRender);
@@ -165,4 +166,4 @@ public partial class Arrangement : IDisposable
         _disposed = true;
         GC.SuppressFinalize(this);
     }
-	}
+}

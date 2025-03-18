@@ -1,15 +1,33 @@
-﻿using Microsoft.AspNetCore.SignalR;
+﻿using BattleShip.Shared.Models;
+using Microsoft.AspNetCore.SignalR;
 using System;
 using System.Data.Common;
 
+
 namespace BattleShip.Server.Hubs;
+
+
+public record struct Player(string Name, string ConnectionId);
+
 
 public class GameHub : Hub
 {
     private static readonly Dictionary<string, List<Tuple<string, string, string?>>> GameGroups = new();
 
+
+	private static readonly Dictionary<string, GameBuilder<Player>> s_gameBuilders;
+	private static readonly Dictionary<string, Game<Player>> s_games;
+
+
 	private static readonly Dictionary<string, string> FieldContent = new();
 	private static readonly Dictionary<string, string> GameMove = new();
+
+
+	static GameHub() 
+	{
+        s_gameBuilders = new();
+		s_games = new();
+    }
 
 	public async Task CreateGame(string game, string username)
     {
@@ -18,10 +36,84 @@ public class GameHub : Hub
             throw new HubException("This game already exists!");
         }
 
-        GameGroups.Add(game, new List<Tuple<string, string, string?>>());
+		GameGroups.Add(game, new List<Tuple<string, string, string?>>());
 
-        await JoinGame(game, username);
+		await JoinGame(game, username);
     }
+
+    public async Task _CreateGame(string game, string username)
+    {
+        if (s_gameBuilders.ContainsKey(game) || s_games.ContainsKey(game))       
+            throw new HubException("This game already exists!");
+        
+		s_gameBuilders[game] = new GameBuilder<Player>();
+
+        await _JoinGame(game, username);
+    }
+
+    public async Task _JoinGame(string game, string username)
+    {
+        if (!s_gameBuilders.ContainsKey(game))       
+            throw new HubException("This game doesn't exists!");
+
+        if (s_gameBuilders[game].IsTwoPlayers || s_games.ContainsKey(game))        
+            throw new HubException("This game is full!");
+        
+
+        s_gameBuilders[game].AddPlayer(new Player(username, Context.ConnectionId));
+
+        try
+        {
+            await Groups.AddToGroupAsync(Context.ConnectionId, game);
+        }
+        catch (Exception ex)
+        {
+            Console.WriteLine(ex.Message);
+        }
+
+        try
+        {
+            await Clients.Group(game).SendAsync("Receive");
+        }
+        catch (Exception ex)
+        {
+            Console.WriteLine(ex.Message);
+        }
+
+        if (s_gameBuilders[game].IsTwoPlayers)
+        {
+            await Clients.Group(game).SendAsync("Notify");
+        }
+    }
+
+    public async Task StartGame(string game, string username, string field)
+    {
+        int index = GameGroups[game].FindIndex(tuple => tuple.Item2 == username);
+
+        if (index != -1)
+        {
+            GameGroups[game][index] = new Tuple<string, string, string?>(Context.ConnectionId, username, field);
+        }
+
+        try
+        {
+            if (GameGroups[game][0].Item3 == null || GameGroups[game][1].Item3 == null)
+            {
+                await Clients.Client(Context.ConnectionId).SendAsync("Wait");
+            }
+            else
+            {
+                await Clients.Group(game).SendAsync("Start");
+            }
+        }
+        catch (Exception e)
+        {
+            await Console.Out.WriteLineAsync($"{e.Message}");
+        }
+    }
+
+
+
 
     public async Task JoinGame(string game, string username)
     {
@@ -66,31 +158,31 @@ public class GameHub : Hub
 		}
     }
 
-    public async Task StartGame(string game, string username, string field)
-    {
-		int index = GameGroups[game].FindIndex(tuple => tuple.Item2 == username);
+ //   public async Task StartGame(string game, string username, string field)
+ //   {
+	//	int index = GameGroups[game].FindIndex(tuple => tuple.Item2 == username);
 
-		if (index != -1)
-		{
-			GameGroups[game][index] = new Tuple<string, string, string?>(Context.ConnectionId, username, field);
-		}
+	//	if (index != -1)
+	//	{
+	//		GameGroups[game][index] = new Tuple<string, string, string?>(Context.ConnectionId, username, field);
+	//	}
 
-		try
-		{
-			if (GameGroups[game][0].Item3 == null || GameGroups[game][1].Item3 == null)
-			{
-				await Clients.Client(Context.ConnectionId).SendAsync("Wait");
-			}
-			else
-			{
-				await Clients.Group(game).SendAsync("Start");
-			}
-		}
-		catch (Exception e)
-		{
-			await Console.Out.WriteLineAsync($"{e.Message}");
-		}
-	}
+	//	try
+	//	{
+	//		if (GameGroups[game][0].Item3 == null || GameGroups[game][1].Item3 == null)
+	//		{
+	//			await Clients.Client(Context.ConnectionId).SendAsync("Wait");
+	//		}
+	//		else
+	//		{
+	//			await Clients.Group(game).SendAsync("Start");
+	//		}
+	//	}
+	//	catch (Exception e)
+	//	{
+	//		await Console.Out.WriteLineAsync($"{e.Message}");
+	//	}
+	//}
 
 	public string GetOpponentField(string game, string username)
 	{
